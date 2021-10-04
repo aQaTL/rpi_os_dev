@@ -12,21 +12,15 @@ clean:
 	rm -rf $(BUILD_DIR)
 	cargo clean
 
-$(BUILD_DIR)/boot_s.o: $(BOOT_SRC_DIR)/boot.S
-	mkdir -p $(BUILD_DIR)
-	$(ARMGNU)-gcc -MMD -c $< -o $@
-
 rust-build:
 	cargo build
 
-$(BUILD_DIR)/kernel8.img: $(BOOT_SRC_DIR)/linker.ld $(BUILD_DIR)/boot_s.o rust-build
+$(BUILD_DIR)/kernel8.img: $(BOOT_SRC_DIR)/linker.ld rust-build
+	mkdir -p $(BUILD_DIR)
 	$(ARMGNU)-ld \
 		-T $(BOOT_SRC_DIR)/linker.ld \
-		-o \
-			$(BUILD_DIR)/kernel8.elf \
-			$(BUILD_DIR)/boot_s.o \
-			$(RUST_BUILD_DIR)/librpi_os.a
-
+		-o $(BUILD_DIR)/kernel8.elf \
+		$(RUST_BUILD_DIR)/librpi_os.a
 	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary $(BUILD_DIR)/kernel8.img
 
 install-toolchain:
