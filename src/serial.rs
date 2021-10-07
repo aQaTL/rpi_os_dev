@@ -1,5 +1,8 @@
+use crate::null_lock::SpinLock;
 use core::fmt::Write;
 use core::{fmt, ptr};
+
+static SERIAL_OUT: SerialOut = SerialOut::new();
 
 #[macro_export]
 macro_rules! serial_print {
@@ -14,15 +17,41 @@ macro_rules! serial_println {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-	SerialOut.write_fmt(args).unwrap();
+	SERIAL_OUT.0.lock().write_fmt(args).unwrap();
 }
 
-struct SerialOut;
+struct SerialOut(SpinLock<SerialOutInner>);
 
-impl Write for SerialOut {
+struct SerialOutInner {
+	bytes_written: usize,
+}
+
+impl SerialOut {
+	const fn new() -> Self {
+		SerialOut(SpinLock::new(SerialOutInner::new()))
+	}
+}
+
+impl SerialOutInner {
+	const fn new() -> Self {
+		SerialOutInner { bytes_written: 0 }
+	}
+
+	fn write_byte(&mut self, byte: u8) {
+		unsafe {
+			ptr::write_volatile(UART_DR as *mut u8, byte);
+		}
+		self.bytes_written += 1;
+	}
+}
+
+impl Write for SerialOutInner {
 	fn write_str(&mut self, s: &str) -> fmt::Result {
 		for byte in s.bytes() {
-			write_byte(byte);
+			if byte == b'\n' {
+				self.write_byte(b'\r');
+			}
+			self.write_byte(byte);
 		}
 		Ok(())
 	}

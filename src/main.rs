@@ -6,6 +6,7 @@
 use core::{slice, str};
 
 mod asm;
+mod null_lock;
 mod serial;
 
 #[panic_handler]
@@ -23,8 +24,6 @@ extern "C" fn main(msg: *const u8, msg_len: usize) -> ! {
 	let msg = unsafe { str::from_utf8_unchecked(slice::from_raw_parts(msg, msg_len)) };
 	serial_println!("{}", msg);
 	serial_println!();
-	serial_println!("Exception level: {}", exception_level());
-	// switch_to_exception_level_1();
 	serial_println!("Exception level: {}", exception_level());
 
 	let value = test_asm();
