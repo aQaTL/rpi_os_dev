@@ -1,33 +1,32 @@
 ARMGNU ?= aarch64-linux-gnu
 
-BUILD_DIR = build
 BOOT_SRC_DIR = boot
 
 RUST_TARGET = aarch64-unknown-none
 RUST_BUILD_DIR = target/$(RUST_TARGET)/debug
 
-all: kernel8.img
+all: $(KERNEL8_IMG)
 
 clean:
-	rm -rf $(BUILD_DIR)
 	cargo clean
 
-rust-build:
-	cargo build
+KERNEL8_ELF = $(RUST_BUILD_DIR)/kernel/kernel8.elf
+KERNEL8_IMG = $(RUST_BUILD_DIR)/kernel/kernel8.img
 
-$(BUILD_DIR)/kernel8.img: $(BOOT_SRC_DIR)/linker.ld rust-build
-	mkdir -p $(BUILD_DIR)
-	$(ARMGNU)-ld \
-		-T $(BOOT_SRC_DIR)/linker.ld \
-		-o $(BUILD_DIR)/kernel8.elf \
-		$(RUST_BUILD_DIR)/librpi_os.a
-	$(ARMGNU)-objcopy $(BUILD_DIR)/kernel8.elf -O binary $(BUILD_DIR)/kernel8.img
+$(KERNEL8_ELF):
+	cargo build
+	mkdir $(RUST_BUILD_DIR)/kernel
+	cp $(RUST_BUILD_DIR)/rpi_os $(RUST_BUILD_DIR)/kernel/kernel8.elf
+
+$(KERNEL8_IMG): $(KERNEL8_ELF)
+	rust-objcopy -O binary $(RUST_BUILD_DIR)/kernel/kernel8.elf $(RUST_BUILD_DIR)/kernel/kernel8.img
 
 install-toolchain:
-	sudo apt install gcc-aarch64-linux-gnu -y
 	rustup target add aarch64-unknown-none
+	cargo install cargo-binutils -f
+	rustup component add llvm-tools-preview
 
-run: $(BUILD_DIR)/kernel8.img
-	qemu-system-aarch64 -M raspi3 -kernel $(BUILD_DIR)/kernel8.elf -serial stdio
+run: $(KERNEL8_IMG)
+	qemu-system-aarch64 -M raspi3 -kernel $(KERNEL8_IMG) -serial stdio
 
 .PHONY: install-toolchain run rust-build

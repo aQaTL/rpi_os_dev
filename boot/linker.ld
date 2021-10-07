@@ -1,43 +1,36 @@
-ENTRY(_start)
+ENTRY(_boot)
+
+PHDRS
+{
+    segment_rx PT_LOAD FLAGS(5); /* 5 == RX */
+    segment_rw PT_LOAD FLAGS(6); /* 6 == RW */
+}
+
+/* RPI 4 loader address */
+_boot = 0x80000;
 
 SECTIONS
 {
-    /* Starts at LOADER_ADDR. */
-    . = 0x80000;
-    __start = .;
-    __text_start = .;
+    . =  _boot;
+   _boot = .;
+   _text_boot = .;
+
     .text :
     {
         KEEP(*(.text.boot))
-        *(.text)
-    }
-    . = ALIGN(4096); /* align to page size */
-    __text_end = .;
+        *(.text*)
+    } :segment_rx
 
-    __rodata_start = .;
-    .rodata :
-    {
-        *(.rodata)
-    }
-    . = ALIGN(4096); /* align to page size */
-    __rodata_end = .;
+    .rodata : ALIGN(8) { *(.rodata*) } :segment_rx
+    .got    : ALIGN(8) { *(.got)     } :segment_rx
 
-    __data_start = .;
-    .data :
-    {
-        *(.data)
-    }
-    . = ALIGN(4096); /* align to page size */
-    __data_end = .;
+    .data : { *(.data*) } :segment_rw
 
-    bss_start = .;
-    .bss :
+    .bss : ALIGN(16)
     {
-        bss = .;
-        *(.bss)
+        bss_start = .;
+        *(.bss*);
+        . = ALIGN(16);
+        bss_end = .;
     }
-    . = ALIGN(4096); /* align to page size */
-    bss_end = .;
-    bss_size = bss_end - bss_start;
-    __end = .;
 }

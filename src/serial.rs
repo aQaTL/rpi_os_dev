@@ -28,10 +28,6 @@ impl Write for SerialOut {
 	}
 }
 
-// raspi2 and raspi3 have peripheral base address 0x3F000000,
-// but raspi1 has peripheral base address 0x20000000. Ensure
-// you are using the correct peripheral address for your
-// hardware.
 const UART_DR: u32 = 0x3F201000;
 const UART_FR: u32 = 0x3F201018;
 

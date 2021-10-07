@@ -3,8 +3,8 @@ name = "rpi_os"
 version = "0.1.0"
 edition = "2018"
 
-[lib]
-crate-type = ["staticlib"]
+#[lib]
+#crate-type = ["staticlib"]
 
 [profile.dev]
 panic = "abort"
